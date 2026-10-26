@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import List
+from pydantic import BaseModel
+from .exercise import Exercise
 
 
-@dataclass(frozen=True)
-class Workout:
-    """A Hevy workout summary."""
+class Workout(BaseModel):
+    """A workout."""
+    model_config = {"frozen": True}
 
     id: str
     title: str
-    sets: int
-
-    def __post_init__(self) -> None:
-        if self.sets < 0:
-            raise ValueError("sets must be non-negative")
+    sets: int = 0
+    routine_id: str | None = None
+    description: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+    updated_at: str | None = None
+    created_at: str | None = None
+    exercises: List[Exercise] = []
