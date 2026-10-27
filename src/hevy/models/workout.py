@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .exercise import Exercise
 
 
@@ -13,7 +13,7 @@ class Workout(BaseModel):
 
     id: str
     title: str
-    sets: int = 0
+    sets: int = Field(ge=0)
     routine_id: str | None = None
     description: str | None = None
     start_time: str | None = None

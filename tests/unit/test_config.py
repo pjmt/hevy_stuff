@@ -5,7 +5,9 @@ import pytest
 from hevy.config import Settings
 
 
-def test_defaults() -> None:
+def test_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("HEVY_API_KEY", raising=False)
+    monkeypatch.delenv("HEVY_BASE_URL", raising=False)
     s = Settings(_env_file=None)
     assert s.base_url == "https://api.hevyapp.com"
     assert s.api_key is None

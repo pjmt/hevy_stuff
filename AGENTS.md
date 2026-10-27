@@ -2,94 +2,117 @@
 
 ## Project Overview
 
-`hevy` is a Python application designed for experiments and scripts relating to Hevy fitness/workout tracking data. The project implements a boring, explicit data flow (Input $\rightarrow$ Parse $\rightarrow$ Transform $\rightarrow$ Output) and strictly avoids global state to maintain a predictable and testable codebase.
+`hevy` is a Python application for experimenting with Hevy fitness/workout-tracking data. It is a synchronous, layered application: `CLI` → `Service` → `Model`, with optional JSON persistence through `Repository`.
+
+- Package: `hevy` (`src/hevy`)
+- Version: `0.1.0` (`src/hevy/__init__.py`)
+- Python: `>=3.11`
+- Package manager / build: `uv` + `hatchling`
+- CLI entry point: `hevy = "hevy.cli.main:app"` (`pyproject.toml`)
+- CLI commands: `version`, `workouts`
 
 ## Architecture & Data Flow
 
-The project follows a **Layered Service-Repository Architecture**.
+### Layers
 
-### High-Level Structure
-- **CLI Layer**: Orchestrates the application flow and handles user I/O via `typer`.
-- **Service Layer**: Contains business logic and external API integration (`HevyClient`).
-- **Repository Layer**: Manages local persistence via JSON files (`WorkoutRepository`).
-- **Model Layer**: Defines domain objects as immutable, frozen dataclasses.
+| Layer | Path | Purpose |
+|---|---|---|
+| CLI | `src/hevy/cli/` | Typer commands, user I/O, orchestration |
+| Service | `src/hevy/services/` | Hevy API integration via `HevyClient` |
+| Repository | `src/hevy/repositories/` | JSON persistence via `WorkoutRepository` |
+| Model | `src/hevy/models/` | Immutable Pydantic domain objects |
+| Config | `src/hevy/config.py` | Pydantic-Settings from `.env`/environment |
 
-### Data Flow
-`CLI` $\rightarrow$ `Service` $\rightarrow$ `Model` $\rightarrow$ `CLI`
-*(Optional persistence: `Service` $\rightarrow$ `Repository` $\rightarrow$ `Disk`)*
+### Data flow
 
-### Key Patterns
-- **Dependency Injection**: Services (e.g., `HevyClient`) accept configuration and transport objects in their constructors, enabling seamless mocking in unit tests.
-- **Immutability**: Domain models are `frozen=True` dataclasses, ensuring a strict, read-only contract between layers.
-- **Resource Management**: Clients implement context managers (`__enter__`/`__exit__`) to ensure HTTP session closure.
+`CLI` → `HevyClient` → `httpx` → Hevy API → parsed `Workout` models → CLI output
+
+Optional persistence:
+
+`CLI/Service` → `WorkoutRepository.save()` → JSON file on disk  
+`WorkoutRepository.load()` → `list[Workout]`
+
+### Key modules
+
+- `src/hevy/config.py`: `Settings` with `api_key`, `base_url`; module-global `settings`.
+- `src/hevy/services/hevy_client.py`: `HevyClient` with constructor DI (`api_key`, `base_url`, `timeout`, `transport`, `client`), `list_workouts()`, and context-manager lifecycle.
+- `src/hevy/repositories/workout_repository.py`: `WorkoutRepository.save()` / `load()`; serializes `id`, `title`, `sets` only.
+- `src/hevy/models/`: frozen Pydantic v2 models; `Workout` validates `sets: int = Field(ge=0)`.
+
+### Key patterns
+
+- Constructor dependency injection for clients and transport.
+- Frozen Pydantic `BaseModel`s for domain objects.
+- Context managers for HTTP client closure.
+- Boundary validation at service/model layer.
+- Synchronous I/O only; no `asyncio`.
 
 ## Key Directories
 
 | Directory | Purpose |
-| :--- | :--- |
-| `src/hevy/cli/` | Command-line entry points and orchestration. |
-| `src/hevy/services/` | API integration logic and domain services. |
-| `src/hevy/repositories/` | Local data persistence logic. |
-| `src/hevy/models/` | Pure domain data models and validation. |
-| `tests/unit/` | Isolated component tests (Models, Services, Repos). |
-| `tests/integration/` | End-to-end flow tests (network/credential gated). |
+|---|---|
+| `src/hevy/` | Application package |
+| `src/hevy/cli/` | CLI entry points |
+| `src/hevy/services/` | API integration |
+| `src/hevy/repositories/` | JSON persistence |
+| `src/hevy/models/` | Domain models |
+| `tests/unit/` | Deterministic unit tests |
 
 ## Development Commands
 
-Managed via `uv`. All commands assume the environment is active or run via `uv run`.
-
 ```bash
+# Setup
+uv sync --extra dev
+
 # Run CLI
-uv run hevy version            # Print package version
-uv run hevy workouts           # List workouts from API
+uv run hevy version
+uv run hevy workouts
 
-# Quality Assurance
-uv run pytest                  # Run all tests
-uv run ruff check . --fix       # Lint and auto-fix
-uv run ruff format             # Format codebase
-uv run mypy .                  # Static type checking
-
-# Environment Management
-uv venv                        # Create virtual environment
-source .venv/bin/activate      # Activate environment
+# Quality
+uv run pytest
+uv run ruff check . --fix
+uv run ruff format
+uv run mypy .
+uv build
 ```
+
+Configuration comes from `.env` or environment with the `HEVY_` prefix (`HEVY_API_KEY`, `HEVY_BASE_URL`); no `.env.example` is committed.
 
 ## Code Conventions & Common Patterns
 
-- **Formatting**: Ruff (Line length: 100, Target: Python 3.11+).
-- **Naming**: Modules `snake_case.py`, Classes `PascalCase`, Functions/Variables `snake_case`, Constants `UPPER_SNAKE`.
-- **Error Handling**: Use domain-specific exceptions; avoid swallowing errors; validate external data at the Service boundary.
-- **Async Patterns**: Use `asyncio` only for I/O-bound tasks; avoid mixing sync/async without a clear boundary.
-- **State Management**: Pass configuration via `hevy.config.settings` (Pydantic) and dependencies via constructors.
+- Formatting/lint: Ruff, line length 100, target `py311`.
+- Ruff rules: `E`, `F`, `I`, `UP`, `B`, `SIM`.
+- Type checking: mypy strict, packages `hevy`, `mypy_path = src`.
+- Modules `snake_case.py`; classes `PascalCase`; functions/variables `snake_case`; constants `UPPER_SNAKE`.
+- Use modern union syntax (`X | None`) and built-in generics (`list[T]`).
+- Services validate external data at boundaries; use `response.raise_for_status()` for API failures.
+- Keep I/O synchronous; do not mix sync/async.
+- Use constructor injection over global state.
 
 ## Important Files
 
-- **Entry Point**: `src/hevy/cli/main.py` ($\rightarrow$ `hevy` command).
-- **Config**: `src/hevy/config.py` (Pydantic settings from `.env` with `HEVY_` prefix).
-- **Manifest**: `pyproject.toml` (Dependencies, tool config, entry points).
-- **Tooling**: `.gitignore` (Standard Python/uv exclusions).
+- `pyproject.toml` — dependencies, scripts, tool configuration
+- `src/hevy/cli/main.py` — CLI commands
+- `src/hevy/services/hevy_client.py` — Hevy API client
+- `src/hevy/repositories/workout_repository.py` — JSON persistence
+- `src/hevy/config.py` — environment settings
+- `src/hevy/models/workout.py` — primary domain model with validation
 
 ## Runtime/Tooling Preferences
 
-- **Runtime**: Python $\ge$ 3.11 (Local baseline: 3.14).
-- **Package Manager**: `uv` (Required).
-- **Build System**: `hatchling`.
-- **Tooling**: `ruff` (lint/format), `mypy` (types), `pytest` (testing).
-- **Secrets**: MUST be stored in `.env` or the OS keyring; never committed to source.
+- Runtime: Python `>=3.11`
+- Package manager: `uv` (required)
+- Build system: `hatchling`
+- Tooling: `ruff` (lint/format), `mypy` (types), `pytest` (tests)
+- Secrets: store in `.env` or OS keyring; never commit source.
 
 ## Testing & QA
 
-### Framework & Expectations
-- **Framework**: `pytest`
-- **Isolation**: All unit tests must be deterministic and isolated.
-- **Mocking**: 
-  - Use `httpx.MockTransport` for API isolation (do not use `unittest.mock` for HTTP).
-  - Use `tmp_path` for filesystem isolation.
-- **Boundaries**:
-  - Unit tests (`tests/unit/`) focus on logic and parsing.
-  - Integration tests (`tests/integration/`) validate actual network/disk flows; mark with `@pytest.mark.integration`.
+- Framework: `pytest`; tests live in `tests/unit/`.
+- Run: `uv run pytest` (addopts `-q`; testpaths `tests`).
+- Mark tests requiring network/credentials with `@pytest.mark.integration`.
+- Isolation: use `httpx.MockTransport` for HTTP and `tmp_path` for filesystem.
+- Current tests cover config defaults/env parsing, client parsing/error propagation, repository round-trip/missing files, and model validation/frozen behavior.
+- Tests must pass before commit; new features and bug fixes should include tests.
 
-### Verification
-- Tests must pass (`uv run pytest`) before any commit.
-- All new features MUST include a corresponding unit test.
-- Regression tests are required for every bug fix.
+No integration test directory exists currently, despite the `integration` marker being declared.
