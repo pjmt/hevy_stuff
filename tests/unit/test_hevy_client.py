@@ -6,6 +6,8 @@ import pytest
 from hevy.models.workout import Workout
 from hevy.services.hevy_client import HevyClient
 
+from hevy.models.user_info import UserInfo
+
 
 def _client(handler) -> HevyClient:
     transport = httpx.MockTransport(handler)
@@ -45,5 +47,52 @@ def test_http_error_propagates() -> None:
     try:
         with pytest.raises(httpx.HTTPStatusError):
             client.list_workouts()
+    finally:
+        client.close()
+
+
+def test_get_userinfo_success() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/user/info"
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "id": "user_123",
+                    "username": "testuser",
+                    "name": "Test User",
+                    "url": "https://hevyapp.me/user/testuser",
+                    "weight_unit": "kg",
+                    "distance_unit": "km",
+                    "is_pro": True,
+                },
+            },
+        )
+
+    client = _client(handler)
+    try:
+        result = client.get_userinfo()
+        assert result == UserInfo(
+            id="user_123",
+            username="testuser",
+            name="Test User",
+            url="https://hevyapp.me/user/testuser",
+            weight_unit="kg",
+            distance_unit="km",
+            is_pro=True,
+        )
+    finally:
+        client.close()
+
+
+def test_get_userinfo_malformed_payload() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        # Missing 'data' key
+        return httpx.Response(200, json={"error": "not found"})
+
+    client = _client(handler)
+    try:
+        with pytest.raises(KeyError):
+            client.get_userinfo()
     finally:
         client.close()

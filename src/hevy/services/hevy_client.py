@@ -8,6 +8,7 @@ import httpx
 
 from hevy.config import settings
 from hevy.models.workout import Workout
+from hevy.models.user_info import UserInfo
 
 
 class HevyClient:
@@ -43,6 +44,21 @@ class HevyClient:
                 )
             )
         return result
+
+    def get_userinfo(self) -> UserInfo:
+        response = self._client.get("/v1/user/info")
+        response.raise_for_status()
+        payload: Any = response.json()       
+        data = payload["data"]
+        return UserInfo(
+            id=str(data["id"]),
+            username=str(data["username"]),
+            name=str(data["name"]),
+            url=str(data["url"]),
+            weight_unit=str(data["weight_unit"]),
+            distance_unit=str(data["distance_unit"]),
+            is_pro=bool(data["is_pro"]),
+        )
 
     def close(self) -> None:
         self._client.close()

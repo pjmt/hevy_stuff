@@ -10,5 +10,9 @@ class UserInfo(BaseModel):
     model_config = {"frozen": True}
 
     id: str
+    username: str
     name: str
     url: str
+    weight_unit: str
+    distance_unit: str
+    is_pro: bool

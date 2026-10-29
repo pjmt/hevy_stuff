@@ -23,3 +23,12 @@ def workouts() -> None:
     with HevyClient() as client:
         for w in client.list_workouts():
             typer.echo(f"{w.id}  {w.title}  sets={w.sets}")
+
+@app.command()
+def userinfo() -> None:
+    """Get user info from the API."""
+    from hevy.services.hevy_client import HevyClient
+
+    with HevyClient() as client:
+        u = client.get_userinfo()
+        typer.echo(f"{u.id}  {u.name}")

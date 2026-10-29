@@ -17,7 +17,15 @@ from hevy.models import (
 )
 
 def test_user_info_valid():
-    u = UserInfo(id="u1", name="Test User", url="http://example.com")
+    u = UserInfo(
+        id="u1",
+        username="testuser",
+        name="Test User",
+        url="http://example.com",
+        weight_unit="kg",
+        distance_unit="km",
+        is_pro=False,
+    )
     assert u.name == "Test User"
 
 def test_exercise_valid():
