@@ -3,10 +3,9 @@
 import httpx
 import pytest
 
+from hevy.models.user_info import UserInfo
 from hevy.models.workout import Workout
 from hevy.services.hevy_client import HevyClient
-
-from hevy.models.user_info import UserInfo
 
 
 def _client(handler) -> HevyClient:

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List
 from pydantic import BaseModel, Field
+
 from .exercise import Exercise
 
 
@@ -20,4 +20,4 @@ class Workout(BaseModel):
     end_time: str | None = None
     updated_at: str | None = None
     created_at: str | None = None
-    exercises: List[Exercise] = []
+    exercises: list[Exercise] = []

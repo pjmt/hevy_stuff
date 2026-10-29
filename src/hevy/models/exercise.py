@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List
 from pydantic import BaseModel
+
 from .set import Set
 
 
@@ -15,5 +15,5 @@ class Exercise(BaseModel):
     title: str
     exercise_template_id: str
     notes: str
-    superset_id: str
-    sets: List[Set]
+    superset_id: int | None =  None
+    sets: list[Set]

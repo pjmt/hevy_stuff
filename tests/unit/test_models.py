@@ -2,6 +2,7 @@
 
 import pytest
 from pydantic import ValidationError
+
 from hevy.models import (
     BodyMeasurement,
     EquipmentCategory,
@@ -15,6 +16,7 @@ from hevy.models import (
     Workout,
     WorkoutEvent,
 )
+
 
 def test_user_info_valid():
     u = UserInfo(
@@ -35,7 +37,7 @@ def test_exercise_valid():
         title="Bench Press", 
         exercise_template_id="et1", 
         notes="", 
-        superset_id="", 
+        superset_id=None, 
         sets=[s]
     )
     assert e.title == "Bench Press"
@@ -52,7 +54,7 @@ def test_routine_valid():
         title="Bench Press", 
         exercise_template_id="et1", 
         notes="", 
-        superset_id="", 
+        superset_id=None, 
         sets=[s]
     )
     r = Routine(
@@ -135,7 +137,7 @@ def test_equipment_category_valid():
 def test_models_are_frozen():
     m = Workout(id="1", title="t", sets=10)
     with pytest.raises(ValidationError):
-        setattr(m, "id", "2") # type: ignore
+        m.id = "2" # type: ignore
 
 def test_workout_validation_rejects_negative_sets():
     with pytest.raises(ValidationError):

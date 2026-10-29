@@ -7,8 +7,8 @@ from typing import Any
 import httpx
 
 from hevy.config import settings
-from hevy.models.workout import Workout
 from hevy.models.user_info import UserInfo
+from hevy.models.workout import Workout
 
 
 class HevyClient:

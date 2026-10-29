@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List
 from pydantic import BaseModel
+
 from .equipment_category import EquipmentCategory
 
 
@@ -15,6 +15,7 @@ class ExerciseTemplate(BaseModel):
     title: str
     type: str
     primary_muscle_group: str
-    secondary_muscle_groups: List[str]
+    secondary_muscle_groups: list[str]
     equipment: EquipmentCategory
     is_custom: bool
+    thumbnail_url: str | None = None

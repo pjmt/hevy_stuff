@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -12,8 +11,9 @@ class Set(BaseModel):
 
     index: int
     type: str
-    weight_kg: Optional[float] = None
-    reps: Optional[int] = None
-    distance_meters: Optional[int] = None
-    duration_seconds: Optional[int] = None
-    rpe: Optional[float] = None
+    weight_kg: float | None = None
+    reps: int | None = None
+    distance_meters: int | None = None
+    duration_seconds: int | None = None
+    rpe: float | None = None
+    custom_metric: int | None = None
