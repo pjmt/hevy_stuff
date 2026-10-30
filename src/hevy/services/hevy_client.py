@@ -29,6 +29,15 @@ class HevyClient:
             headers["api-key"] = self.api_key
         return headers
 
+    def get_workout_count(self) -> int | None:
+        try:
+            response = self._client.get("/v1/workouts/count")
+            response.raise_for_status()
+            payload: Any = response.json()
+            return int(payload["workout_count"])
+        except httpx.HTTPError:
+            return None
+
     def list_workouts(self) -> list[Workout]:
         response = self._client.get("/v1/workouts")
         response.raise_for_status()

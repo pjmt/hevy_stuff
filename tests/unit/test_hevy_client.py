@@ -24,6 +24,29 @@ def test_list_workouts_list_payload() -> None:
     client.close()
 
 
+def test_get_workout_count_success() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/workouts/count"
+        return httpx.Response(200, json={"workout_count": 42})
+
+    client = _client(handler)
+    try:
+        assert client.get_workout_count() == 42
+    finally:
+        client.close()
+
+
+def test_get_workout_count_error_returns_none() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500)
+
+    client = _client(handler)
+    try:
+        assert client.get_workout_count() is None
+    finally:
+        client.close()
+
+
 def test_list_workouts_wrapped_payload() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"workouts": [{"id": 2, "title": "Back", "sets": None}]})

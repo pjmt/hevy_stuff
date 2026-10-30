@@ -16,6 +16,15 @@ def version() -> None:
 
 
 @app.command()
+def workout_count() -> None:
+    """Get workout count from the API."""
+    from hevy.services.hevy_client import HevyClient
+
+    with HevyClient() as client:
+        count = client.get_workout_count()
+        typer.echo(f"{count}")
+
+@app.command()
 def workouts() -> None:
     """List workouts from the API."""
     from hevy.services.hevy_client import HevyClient
